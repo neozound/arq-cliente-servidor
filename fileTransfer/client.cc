@@ -32,15 +32,16 @@ int main(int argc, char const *argv[]) {
     s.connect("tcp://localhost:4242");
 
     char option=' ';
+    cout << "Available options:" << endl;
+    cout << " * (L)ist" << endl;
+    cout << " * (U)pload" << endl;
+    cout << " * (D)ownload" << endl;
+    cout << " * (E)rase" << endl;
+    cout << " * E(X)it" << endl;
     do
     {
       //display of the options
-      cout << "==== Select an option:" << endl;
-      cout << " * (L)ist" << endl;
-      cout << " * (U)pload" << endl;
-      cout << " * (D)ownload" << endl;
-      cout << " * (E)rase" << endl;
-      cout << " * E(X)it" << endl;
+      cout << "> ";
       cin >> option;
 
       switch(option){
@@ -85,12 +86,17 @@ void listf(socket &s){
 }
 
 void uploadf(socket &s){
+  //declaration
   streampos size;
   char * memblock;
+  string fname;
+
+  //get the name of the file
+  cout << "write the filename: ";
+  cin >> fname;
 
   //ate: Is a flag that points the file pointer to the end of the file
-  ifstream file ("escher.jpg", ios::in|ios::binary|ios::ate);
-  ofstream outputFile ("escher2.jpg", ios::binary);
+  ifstream file (fname, ios::in|ios::binary|ios::ate);
 
   if (file.is_open())
   {
@@ -110,13 +116,10 @@ void uploadf(socket &s){
 
     cout << "the entire file is in memory" << endl;
 
-    outputFile.write (memblock, size);
-
-    outputFile.close();
-
     delete[] memblock;
+  }else{
+    cout << "bad filename" << '\n';
   }
-
 }
 
 void downloadf(socket &s){}
