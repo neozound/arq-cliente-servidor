@@ -13,8 +13,8 @@ loading a binary file
 conecting to a server
 recieving files and save them to disk
 send stored files
-send a list of files stored into disk
 remove files with a command
+list the files stored in the server
 */
 
 int main() {
