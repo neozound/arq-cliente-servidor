@@ -88,7 +88,6 @@ void listf(socket &s){
 void uploadf(socket &s){
   //declaration
   streampos size;
-  char * memblock;
   string fname;
 
   //get the name of the file
@@ -105,18 +104,24 @@ void uploadf(socket &s){
     total size of file
     */
     size = file.tellg();
-    cout << size << endl;
+    cout << "size: " << size << endl;
     // We now request the allocation of a memory as big as size
-    memblock = new char [size];
+    int num_of_chunks = size/sizeof(int);
+    cout << "chunks: " << num_of_chunks << endl;
+    int * chunks  = new int[num_of_chunks];
     //we position the pointer to the begin of the file
     file.seekg(0, ios::beg);
     //we store the content of the read file to memblock
-    file.read(memblock, size);
+    file.read(reinterpret_cast<char*>(chunks), num_of_chunks*sizeof(int));
     file.close();
 
     cout << "the entire file is in memory" << endl;
 
-    delete[] memblock;
+    for (int i = 0; i < num_of_chunks; i++) {
+      cout << chunks[i] << endl;
+    }
+
+    delete[] chunks;
   }else{
     cout << "bad filename" << '\n';
   }
