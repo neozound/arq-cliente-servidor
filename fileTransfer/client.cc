@@ -87,8 +87,12 @@ void listf(socket &s){
 
 void uploadf(socket &s){
   //declaration
-  streampos size;
+  size_t size;
   string fname;
+  char * memblock;
+
+  message mToSend;
+  mToSend << "upload";
 
   //get the name of the file
   cout << "write the filename: ";
@@ -96,6 +100,7 @@ void uploadf(socket &s){
 
   //ate: Is a flag that points the file pointer to the end of the file
   ifstream file (fname, ios::in|ios::binary|ios::ate);
+  //ofstream outfile ("test.jpg", ios::out|ios::binary);
 
   if (file.is_open())
   {
@@ -106,22 +111,32 @@ void uploadf(socket &s){
     size = file.tellg();
     cout << "size: " << size << endl;
     // We now request the allocation of a memory as big as size
-    int num_of_chunks = size/sizeof(int);
-    cout << "chunks: " << num_of_chunks << endl;
-    int * chunks  = new int[num_of_chunks];
+    memblock = new char [size];
+    //vector<char> fileToSend(size);
     //we position the pointer to the begin of the file
     file.seekg(0, ios::beg);
     //we store the content of the read file to memblock
-    file.read(reinterpret_cast<char*>(chunks), num_of_chunks*sizeof(int));
+
+    //vector.data() es el puntero que apunta al inicio del arreglo
+    //file.read(fileToSend.data(), size);
+    file.read(memblock, size);
+
     file.close();
 
     cout << "the entire file is in memory" << endl;
 
-    for (int i = 0; i < num_of_chunks; i++) {
-      cout << chunks[i] << endl;
-    }
 
-    delete[] chunks;
+    mToSend << fname << size;
+    //mToSend.add_raw(fileToSend.data(), size);
+    mToSend.add_raw(memblock, size);
+    s.send(mToSend);
+    /*
+    ofstream outfile("1" + fname,  ios::binary);
+    outfile.write(memblock, size);
+    outfile.close();
+    */
+
+    delete[] memblock;
   }else{
     cout << "bad filename" << '\n';
   }

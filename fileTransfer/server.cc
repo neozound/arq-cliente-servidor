@@ -1,6 +1,8 @@
 #include <zmqpp/zmqpp.hpp>
 #include <iostream>
 #include <string>
+#include <vector>
+#include <fstream>
 
 using namespace std;
 using namespace zmqpp;
@@ -17,7 +19,7 @@ remove files with a command
 */
 
 void listf(socket &s);
-void uploadf(socket &s);
+void uploadf(socket &s, message &m);
 void downloadf(socket &s);
 void erasef(socket &s);
 
@@ -29,7 +31,7 @@ int main(int argc, char *argv[]) {
   // bind to the socket
   s.bind("tcp://*:4242");
 
-  while (true) {
+  //while (true) {
     // receive the message
     cout << "Receiving message..." << endl;
     message req;
@@ -38,24 +40,24 @@ int main(int argc, char *argv[]) {
     string option;
     req >> option;
 
-    if (option == "list")
-    {
+    if (option == "list"){
       listf(s);
-    }else if (option == "")
-    {
+    }
+    if (option == "upload"){
+      uploadf(s, req);
+    }
+    if (option == ""){
       /* code */
-    }else if (option == "")
-    {
+    }
+    if (option == ""){
       /* code */
-    }else if (option == "")
-    {
-      /* code */
-    }else{
+    }
+    else{
 
     }
 
   cout << "Finished." << endl;
-}
+//}
 }
 
 
@@ -67,7 +69,28 @@ void listf(socket &s){
     cout << "A client asked for list" << endl;
 }
 
-void uploadf(socket &s){}
+void uploadf(socket &s, message &m){
+  long size;
+  string fname;
+  cout << "Entro a upload";
+  //ofstream outfile (fname,ios::binary);
+
+
+  m >> fname;
+  fname = "1" + fname;
+  m >> size;
+
+  cout << fname;
+  cout << size;
+
+  const char* dataPointer;
+  dataPointer = new char(size);
+  dataPointer = static_cast<const char*>(m.raw_data(2));
+
+  ofstream outfile(fname,  ios::binary);
+  outfile.write(dataPointer, size);
+  outfile.close();
+}
 
 void downloadf(socket &s){}
 
