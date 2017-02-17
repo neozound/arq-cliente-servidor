@@ -6,6 +6,12 @@
 using namespace std;
 using namespace zmqpp;
 
+void clean_message(message& m){
+  while(m.parts() > 0){
+    m.pop_back();
+  }
+}
+
 vector<char> readFileToBytes(const string& fileName) {
 	ifstream ifs(fileName, ios::binary | ios::ate);
 	ifstream::pos_type pos = ifs.tellg();
@@ -30,6 +36,7 @@ void create_message(const string& cmd, const string& filename, message& msg){
 int main(){
   string cmd = "upload";
   string filename = "lincoln.jpg";
+  string strMsg;
 
   context ctx;
   socket s(ctx, socket_type::req);
@@ -38,7 +45,20 @@ int main(){
   message m;
   create_message(cmd, filename, m);
   s.send(m);
-  cout << m.parts();
 
+  s.receive(m);
+  m >> strMsg;
+  cout << strMsg << endl;
+
+  clean_message(m);
+
+  fileToMesage(filename,m);
+  s.send(m);
+  s.receive(m);
+
+  m >> strMsg;
+  cout << strMsg << endl;
+  clean_message(m);
+  
   return 0;
 }
