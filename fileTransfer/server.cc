@@ -17,10 +17,10 @@ send a list of files stored into disk
 remove files with a command
 */
 
-void listf(socket &s);
-void uploadf(socket &s,string filename);
+void listf(socket &s, const string &files);
+void uploadf(socket &s,string filename, string &files);
 void downloadf(socket &s);
-void erasef(socket &s);
+void erasef(socket &s, string &files);
 
 void clean_message(message& m);
 void messageToFile(const message& msg, const string& fileName);
@@ -32,24 +32,32 @@ int main(int argc, char *argv[]) {
   socket s(bbox, socket_type::reply);
   // bind to the socket
   s.bind("tcp://*:4242");
+  
+  
+
+  //vector with all the uploaded filenames
+  string files;
 
   while (true) {
     // receive the message
-    cout << "Receiving message..." << endl;
     message req;
+    cout << "Receiving message..." << endl;
     s.receive(req);
 
     string option;
     string fname;
     req >> option;
-    req >> fname;
+
+    cerr << "option: " << option << endl;
 
     if (option == "list")
     {
-      listf(s);
+      const string chain(files);
+      listf(s,chain);
     }else if (option == "upload")
     {
-      uploadf(s,fname);
+      req >> fname;
+      uploadf(s,fname,files);
     }else if (option == "")
     {
       /* code */
@@ -66,30 +74,33 @@ int main(int argc, char *argv[]) {
 
 //the name of the function indiques the request of the client
 
-void listf(socket &s){
-    message req;
-    req << "Ok!, List request received";
-    s.send(req);
+void listf(socket &s, const string &files){
+    message m;
+    m << files;
+    s.send(m);
     cout << "A client asked for list" << endl;
 }
 
-void uploadf(socket &s,string filename){
+void uploadf(socket &s,string filename, string &files){
     message m;
 
     s.send("Ready to recieve");
 
     s.receive(m);
-    filename = "down_" + filename;
+    filename = "uploaded_" + filename;
     messageToFile(m,filename);
 
     clean_message(m);
     cout << "Finished" << endl;
     s.send("Saved");
+
+    //after saved the file add it to the 
+    files += "\n" + filename;
 }
 
 void downloadf(socket &s){}
 
-void erasef(socket &s){}
+void erasef(socket &s, string &files){}
 
 //file manager functions
 void clean_message(message& m){

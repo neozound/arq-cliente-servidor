@@ -80,13 +80,12 @@ void listf(socket &s){
     message req;
     req << "list";
     s.send(req);
-    cout << "List request sent." << endl;
     //wait for answer
     message ans;
     string chain;
     s.receive(ans);
     ans >> chain;
-    cout << "Response: " << chain << endl;
+    cout << "Files in the server: "<< chain << endl;
 
 }
 
@@ -98,6 +97,13 @@ void uploadf(socket &s){
   //get the name of the file
   cout << "write the filename: ";
   cin >> filename;
+  //check if file exist
+  ifstream infile(filename);
+  if (!infile.good())
+  {
+    cout << "Bad filename!"<< endl;
+    return;
+  }//get out if bad filename
 
   //the privated client-server comand
   string cmd = "upload";
