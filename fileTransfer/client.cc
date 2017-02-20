@@ -23,6 +23,11 @@ void uploadf(socket &s);
 void downloadf(socket &s);
 void erasef(socket &s);
 
+void clean_message(message& m);
+vector<char> readFileToBytes(const string& fileName) ;
+void fileToMesage(const string& fileName, message& msg);
+void create_message(const string& cmd, const string& filename, message& msg);
+
 int main(int argc, char const *argv[]) {
 
     //Created a context (blackbox)
@@ -88,45 +93,66 @@ void listf(socket &s){
 void uploadf(socket &s){
   //declaration
   streampos size;
-  string fname;
+  string filename;
 
   //get the name of the file
   cout << "write the filename: ";
-  cin >> fname;
+  cin >> filename;
 
-  //ate: Is a flag that points the file pointer to the end of the file
-  ifstream file (fname, ios::in|ios::binary|ios::ate);
+  //the privated client-server comand
+  string cmd = "upload";
+  string strMsg;
 
-  if (file.is_open())
-  {
-    /*
-    tellg() gets the position that points file, in this case it means the
-    total size of file
-    */
-    size = file.tellg();
-    cout << "size: " << size << endl;
-    // We now request the allocation of a memory as big as size
-    int num_of_chunks = size/sizeof(int);
-    cout << "chunks: " << num_of_chunks << endl;
-    int * chunks  = new int[num_of_chunks];
-    //we position the pointer to the begin of the file
-    file.seekg(0, ios::beg);
-    //we store the content of the read file to memblock
-    file.read(reinterpret_cast<char*>(chunks), num_of_chunks*sizeof(int));
-    file.close();
+  message m;
+  create_message(cmd, filename, m);
+  s.send(m);
 
-    cout << "the entire file is in memory" << endl;
+  s.receive(m);
+  m >> strMsg;
+  cout << strMsg << endl;
 
-    for (int i = 0; i < num_of_chunks; i++) {
-      cout << chunks[i] << endl;
-    }
+  clean_message(m);
 
-    delete[] chunks;
-  }else{
-    cout << "bad filename" << '\n';
-  }
+  fileToMesage(filename,m);
+  s.send(m);
+  s.receive(m);
+
+  m >> strMsg;
+  cout << strMsg << endl;
+  clean_message(m);
+  
 }
 
 void downloadf(socket &s){}
 
 void erasef(socket &s){}
+
+
+//Functions of messaging & file manage
+
+void clean_message(message& m){
+  while(m.parts() > 0){
+    m.pop_back();
+  }
+}
+
+vector<char> readFileToBytes(const string& fileName) {
+  ifstream ifs(fileName, ios::binary | ios::ate);
+  ifstream::pos_type pos = ifs.tellg();
+
+  vector<char> result(pos);
+
+  ifs.seekg(0, ios::beg);
+  ifs.read(result.data(), pos);
+
+  return result;
+}
+
+void fileToMesage(const string& fileName, message& msg) {
+  vector<char> bytes = readFileToBytes(fileName);
+  msg.add_raw(bytes.data(), bytes.size());
+}
+
+void create_message(const string& cmd, const string& filename, message& msg){
+  msg << cmd << filename;
+}
