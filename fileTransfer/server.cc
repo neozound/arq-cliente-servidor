@@ -1,97 +1,50 @@
-#include <zmqpp/zmqpp.hpp>
 #include <iostream>
+#include <zmqpp/zmqpp.hpp>
 #include <string>
-#include <vector>
 #include <fstream>
 
 using namespace std;
 using namespace zmqpp;
 
-// formating the code: clang-format -i server.cc
-
-/*
-It is capable of
-recieving incomming connections of a client
-recieving files and save them to disk
-send stored files
-send a list of files stored into disk
-remove files with a command
-*/
-
-void listf(socket &s);
-void uploadf(socket &s, message &m);
-void downloadf(socket &s);
-void erasef(socket &s);
-
-int main(int argc, char *argv[]) {
-  // initialize the context (blackbox)
-  context bbox;
-  // generate a reply socket
-  socket s(bbox, socket_type::reply);
-  // bind to the socket
-  s.bind("tcp://*:4242");
-
-  //while (true) {
-    // receive the message
-    cout << "Receiving message..." << endl;
-    message req;
-    s.receive(req);
-
-    string option;
-    req >> option;
-
-    if (option == "list"){
-      listf(s);
-    }
-    if (option == "upload"){
-      uploadf(s, req);
-    }
-    if (option == ""){
-      /* code */
-    }
-    if (option == ""){
-      /* code */
-    }
-    else{
-
-    }
-
-  cout << "Finished." << endl;
-//}
+void clean_message(message& m){
+  while(m.parts() > 0){
+    m.pop_back();
+  }
 }
 
+void messageToFile(const message& msg, const string& fileName) {
+	const void *data;
+	msg.get(&data, 0);
+	size_t size = msg.size(0);
 
-
-void listf(socket &s){
-    message req;
-    req << "Ok!, List request received";
-    s.send(req);
-    cout << "A client asked for list" << endl;
+	ofstream ofs(fileName, ios::binary);
+	ofs.write((char*)data, size);
 }
 
-void uploadf(socket &s, message &m){
-  long size;
-  string fname;
-  cout << "Entro a upload";
-  //ofstream outfile (fname,ios::binary);
+int main(){
+  string cmd;
+  string filename;
+  context ctx;
+  socket s(ctx, socket_type::rep);
+  s.bind("tcp://*:5555");
 
+  message m;
+  s.receive(m);
+  m >> cmd;
+  m >> filename;
 
-  m >> fname;
-  fname = "1" + fname;
-  m >> size;
+  clean_message(m);
 
-  cout << fname;
-  cout << size;
+  cout << cmd << " " << filename << endl;
 
-  const char* dataPointer;
-  dataPointer = new char(size);
-  dataPointer = static_cast<const char*>(m.raw_data(2));
+  s.send("Ready to recieve");
 
-  ofstream outfile(fname,  ios::binary);
-  outfile.write(dataPointer, size);
-  outfile.close();
+  s.receive(m);
+  filename = "down" + filename;
+  messageToFile(m,filename);
+
+  clean_message(m);
+  cout << "Finished" << endl;
+  s.send("Saved");
+  return 0;
 }
-
-void downloadf(socket &s){}
-
-void erasef(socket &s){}
