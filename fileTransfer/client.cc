@@ -26,6 +26,7 @@ void erasef(socket &s);
 void clean_message(message& m);
 vector<char> readFileToBytes(const string& fileName) ;
 void fileToMesage(const string& fileName, message& msg);
+void messageToFile(const message& msg, const string& fileName);
 void create_message(const string& cmd, const string& filename, message& msg);
 
 int main(int argc, char const *argv[]) {
@@ -129,7 +130,44 @@ void uploadf(socket &s){
   
 }
 
-void downloadf(socket &s){}
+void downloadf(socket &s){
+  //first ask for the file
+  //if file exists wait for answer
+  //if file doesn't exist then exit
+  string filename;
+
+  //get the name of the file
+  cout << "write the filename: ";
+  cin >> filename;
+
+  //the privated client-server comand
+  string cmd = "download";
+  string answer;
+
+  message m;
+  create_message(cmd, filename, m);
+  s.send(m);
+
+  s.receive(m);
+  m >> answer;
+
+  clean_message(m);
+
+  if (answer == "bad")
+  {
+    cout << "Bad filename!"<< endl;
+    return;
+  }else if(answer == "good"){
+    //recive the file
+    s.receive(m);
+    filename = "downloaded_" + filename;
+    messageToFile(m,filename);
+
+    clean_message(m);
+    cout << "Finished" << endl;
+    s.send("ok"); //ACK
+  }
+}
 
 void erasef(socket &s){}
 
@@ -157,6 +195,15 @@ vector<char> readFileToBytes(const string& fileName) {
 void fileToMesage(const string& fileName, message& msg) {
   vector<char> bytes = readFileToBytes(fileName);
   msg.add_raw(bytes.data(), bytes.size());
+}
+
+void messageToFile(const message& msg, const string& fileName) {
+  const void *data;
+  msg.get(&data, 0);
+  size_t size = msg.size(0);
+
+  ofstream ofs(fileName, ios::binary);
+  ofs.write((char*)data, size);
 }
 
 void create_message(const string& cmd, const string& filename, message& msg){

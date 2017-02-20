@@ -19,11 +19,16 @@ remove files with a command
 
 void listf(socket &s, const string &files);
 void uploadf(socket &s,string filename, string &files);
-void downloadf(socket &s);
+void downloadf(socket &s,string filename);
 void erasef(socket &s, string &files);
 
 void clean_message(message& m);
 void messageToFile(const message& msg, const string& fileName);
+vector<char> readFileToBytes(const string& fileName) ;
+void fileToMesage(const string& fileName, message& msg);
+void create_message(const string& cmd, const string& filename, message& msg);
+
+
 
 int main(int argc, char *argv[]) {
   // initialize the context (blackbox)
@@ -41,14 +46,14 @@ int main(int argc, char *argv[]) {
   while (true) {
     // receive the message
     message req;
-    cout << "Receiving message..." << endl;
+    cout << "Receiving message... ";
     s.receive(req);
 
     string option;
     string fname;
     req >> option;
 
-    cerr << "option: " << option << endl;
+    cerr << option << endl;
 
     if (option == "list")
     {
@@ -58,9 +63,10 @@ int main(int argc, char *argv[]) {
     {
       req >> fname;
       uploadf(s,fname,files);
-    }else if (option == "")
+    }else if (option == "download")
     {
-      /* code */
+      req >> fname;
+      downloadf(s,fname);
     }else if (option == "")
     {
       /* code */
@@ -98,7 +104,36 @@ void uploadf(socket &s,string filename, string &files){
     files += "\n" + filename;
 }
 
-void downloadf(socket &s){}
+void downloadf(socket &s,string filename){
+ //declaration
+  streampos size;
+  string strMsg;
+
+  cerr << "here is jhonny";return;
+
+  //check if file exist
+  ifstream infile(filename);
+  if (!infile.good())
+  {
+    s.send("bad");
+    return;
+  }//get out if bad filename
+
+  s.send("good");
+  cout << "Client downloading "<< filename << "... ";
+
+  message m;
+
+  fileToMesage(filename,m);
+  s.send(m);
+
+  s.receive(m);
+
+  m >> strMsg;
+  cout << strMsg << endl;
+  clean_message(m);
+  
+}
 
 void erasef(socket &s, string &files){}
 
@@ -116,4 +151,25 @@ void messageToFile(const message& msg, const string& fileName) {
 
   ofstream ofs(fileName, ios::binary);
   ofs.write((char*)data, size);
+}
+
+vector<char> readFileToBytes(const string& fileName) {
+  ifstream ifs(fileName, ios::binary | ios::ate);
+  ifstream::pos_type pos = ifs.tellg();
+
+  vector<char> result(pos);
+
+  ifs.seekg(0, ios::beg);
+  ifs.read(result.data(), pos);
+
+  return result;
+}
+
+void fileToMesage(const string& fileName, message& msg) {
+  vector<char> bytes = readFileToBytes(fileName);
+  msg.add_raw(bytes.data(), bytes.size());
+}
+
+void create_message(const string& cmd, const string& filename, message& msg){
+  msg << cmd << filename;
 }
