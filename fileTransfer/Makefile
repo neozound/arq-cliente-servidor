@@ -1,4 +1,4 @@
-CC	= g++ -std=c++11 -Wall
+CC	= g++ -std=c++11 -Wall -g
 LDFLAGS = -lpthread -lzmqpp -lzmq
 
 all: server client
@@ -11,3 +11,4 @@ client: client.cc
 
 clean:
 	rm -f client server
+

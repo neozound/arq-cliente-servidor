@@ -159,13 +159,13 @@ void downloadf(socket &s){
     return;
   }else if(answer == "good"){
     //recive the file
+    s.send("ready to receive");
     s.receive(m);
     filename = "downloaded_" + filename;
     messageToFile(m,filename);
 
     clean_message(m);
     cout << "Finished" << endl;
-    s.send("ok"); //ACK
   }
 }
 

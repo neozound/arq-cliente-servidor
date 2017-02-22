@@ -97,7 +97,7 @@ void uploadf(socket &s,string filename, string &files){
     messageToFile(m,filename);
 
     clean_message(m);
-    cout << "Finished" << endl;
+    cout << "Image " << filename << " saved" << endl;
     s.send("Saved");
 
     //after saved the file add it to the 
@@ -108,8 +108,6 @@ void downloadf(socket &s,string filename){
  //declaration
   streampos size;
   string strMsg;
-
-  cerr << "here is jhonny";return;
 
   //check if file exist
   ifstream infile(filename);
@@ -123,15 +121,17 @@ void downloadf(socket &s,string filename){
   cout << "Client downloading "<< filename << "... ";
 
   message m;
+  s.receive(m);
+  string ack;
+  m >> ack;
+  
+  cout << ack << "... ";
 
+  clean_message(m);
   fileToMesage(filename,m);
   s.send(m);
 
-  s.receive(m);
-
-  m >> strMsg;
-  cout << strMsg << endl;
-  clean_message(m);
+  cout << "ok" << endl;
   
 }
 
