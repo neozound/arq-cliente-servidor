@@ -93,20 +93,27 @@ void uploadf(socket &s,string filename, string &files)
   //create a message and start a "conversation" with the client
   message m;
   s.send("Ready to recieve");
-  //receive the file
+  
   s.receive(m);
-  //in m comes the file from the user, modify the filename (prefix)
-  //filename = "uploaded_" + filename;
-  //and put the message in a file
-  messageToFile(m,filename);
-  //wipe the message
-  clean_message(m);
-
-  //report the course of the actions
-  cout << "Image " << filename << " saved" << endl;
-  //say to the client that all is fine...
-  s.send("Saved");
+    int number_of_parts = 0;
+    string cosas;
+    cosas = m.get(0);
+    number_of_parts = string_to_number(cosas);
+    clean_message(m);
+    s.send("everything is well");
+    //define the prefix
+    filename = "new_" + filename;
+    remove( filename.c_str() );
+    for (int i = 0; i < number_of_parts; ++i)
+    {
+      s.receive(m);
+      s.send("ACK");
+      messageToPartialFile(m,filename);
+      clean_message(m);
+    }
+  
   //after saved the file add it to the 
+  seek_n_destroy(files,filename);
   files += "\n" + filename;
 }
 

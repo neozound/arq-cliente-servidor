@@ -106,12 +106,26 @@ void uploadf(socket &s){
 
   clean_message(m);
 
-  fileToMessage(filename,m);
+  //wipe the message
+  clean_message(m);
+  //create the object for manage the file
+  //jack the ripper
+  FileSplitter chop(filename);
+  int number_of_parts = chop.getNumberOfParts();
+  string tmp;
+  tmp = number_to_string(number_of_parts);
+  m << tmp;
   s.send(m);
+  cout << "Sending " << number_of_parts << " parts" << endl;
   s.receive(m);
+  clean_message(m);
+  while(!chop.isOver()){
+    chop.nextChunkToMesage(m);
+    s.send(m);
+    s.receive(m);
+    clean_message(m);
+  }
 
-  m >> strMsg;
-  cout << strMsg << endl;
   clean_message(m);
 
 }
