@@ -107,8 +107,8 @@ void uploadf(socket &s,string filename, string &files)
   s.send("Ready to recieve");
   //receive the file
   s.receive(m);
-  //in m comes the file from the user, modify the filename
-  filename = "uploaded_" + filename;
+  //in m comes the file from the user, modify the filename (prefix)
+  //filename = "uploaded_" + filename;
   //and put the message in a file
   messageToFile(m,filename);
   //wipe the message
