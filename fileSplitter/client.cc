@@ -52,7 +52,6 @@ class FileSplitter {
           vector<char> bytes(65536);
           ifs.seekg(pos);
           ifs.read(bytes.data(), 65536);
-          ifs.seekg(pos + 65536);
           pos = pos + 65536;
           msg.add_raw(bytes.data(), bytes.size());
         }else{
@@ -60,6 +59,7 @@ class FileSplitter {
           ifs.seekg(pos);
           //if is the las part
           ifs.read(bytes.data(), endpos-pos);
+          pos = pos + endpos-pos;
           msg.add_raw(bytes.data(), bytes.size());
         }
       }
@@ -92,6 +92,7 @@ void clean_message(message& m);
 vector<char> readFileToBytes(const string& fileName) ;
 void fileToMesage(const string& fileName, message& msg);
 void messageToFile(const message& msg, const string& fileName);
+void messageToPartialFile(const message& msg, const string& fileName);
 void create_message(const string& cmd, const string& filename, message& msg);
 
 int main(int argc, char const *argv[]) {
@@ -234,11 +235,14 @@ void downloadf(socket &s){
     number_of_parts = StringToNumber(cosas);
     clean_message(m);
     s.send("everything is well");
+    //define the prefix
+    filename = "new_" + filename;
+    remove( filename.c_str() );
     for (int i = 0; i < number_of_parts; ++i)
     {
       s.receive(m);
       s.send("ACK");
-      messageToFile(m,filename+NumberToString(i));
+      messageToPartialFile(m,filename);
       clean_message(m);
     }
     s.receive(m);
@@ -300,6 +304,16 @@ void messageToFile(const message& msg, const string& fileName) {
   size_t size = msg.size(0);
 
   ofstream ofs(fileName, ios::binary);
+  ofs.write((char*)data, size);
+}
+
+void messageToPartialFile(const message& msg, const string& fileName) {
+  const void *data;
+  msg.get(&data, 0);
+  size_t size = msg.size(0);
+
+  ofstream ofs(fileName, ios::binary | ios::ate | ios::app);
+  ofs.seekp(0,ios::end);
   ofs.write((char*)data, size);
 }
 

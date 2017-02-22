@@ -55,6 +55,7 @@ class FileSplitter {
           ifs.seekg(pos);
           //if is the las part
           ifs.read(bytes.data(), endpos-pos);
+          pos = endpos;
           msg.add_raw(bytes.data(), bytes.size());
         }
       }
