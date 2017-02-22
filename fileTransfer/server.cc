@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <regex>
 
 using namespace std;
 using namespace zmqpp;
@@ -150,7 +149,8 @@ void erasef(socket &s, string filename , string &files){
     s.send("File successfully deleted" );
     cout << "Ok" << endl;
     //if ok then delete the file from the list
-    seek_n_destroy(filename,files);
+    filename = "\n" + filename;
+    seek_n_destroy(files,filename);
   }
   return ;
 }
@@ -160,8 +160,11 @@ void erasef(socket &s, string filename , string &files){
 void seek_n_destroy(string& victim, string& part)
 {
   //kill 'em all
-  regex pattern(part);
-  cout << regex_replace(victim, pattern, "");
+   size_t n = part.length();
+   for (size_t i = victim.find(part);
+        i != string::npos;
+        i = victim.find(part))
+      victim.erase(i, n);
 }
 //file manager functions
 void clean_message(message& m){
