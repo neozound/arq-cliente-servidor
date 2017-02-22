@@ -29,28 +29,39 @@ class FileSplitter {
     int pos;
     string filename;
     int endpos;
-    ifstream ifs;
 
   public:
     FileSplitter(string filename) : filename(filename){
       ifstream ifs(filename, ios::binary | ios::ate);
-      pos = ifs.tellg();
+      endpos = ifs.tellg();
       ifs.seekg(0, ios::beg);
+      pos = ifs.tellg();
+    }
+
+    int getNumberOfParts(){
+      return endpos / 65536 + (endpos % 65536 > 0);
     }
 
     void nextChunkToMesage(message& msg) {
+      ifstream ifs(filename, ios::binary);
       //validate that has bytes to read
       if (!isOver()){
         //the chunk size is half Mib = 2^16 bytes
-        vector<char> bytes(65536);
         //verify if isn't the last part
         if( pos <= (endpos - 65536) ){
-          ifs.read(bytes.data(), pos);
+          vector<char> bytes(65536);
+          ifs.seekg(pos);
+          ifs.read(bytes.data(), 65536);
+          ifs.seekg(pos + 65536);
+          pos = pos + 65536;
+          msg.add_raw(bytes.data(), bytes.size());
         }else{
+          vector<char> bytes(endpos-pos);
+          ifs.seekg(pos);
           //if is the las part
-          ifs.read(bytes.data(), endpos);
+          ifs.read(bytes.data(), endpos-pos);
+          msg.add_raw(bytes.data(), bytes.size());
         }
-        msg.add_raw(bytes.data(), bytes.size());
       }
     }
     
@@ -218,8 +229,6 @@ void downloadf(socket &s){
     clean_message(m);
     s.receive(m);
     int number_of_parts = 0;
-    string tmpstr;
-    int num = m.parts();
     string cosas;
     cosas = m.get(0);
     number_of_parts = StringToNumber(cosas);
