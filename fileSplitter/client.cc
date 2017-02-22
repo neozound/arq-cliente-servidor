@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iterator>
 #include <vector>
+#include <sstream>
+#include <string>
 
 using namespace std;
 using namespace zmqpp;
@@ -17,7 +19,59 @@ remove files with a command
 list the files stored in the server
 */
 
+//object that manage the file
+/**
+Contais the filename, the size and the cursor
+can read a part to message, inform the status of the cursor
+*/
+class FileSplitter {
+  protected:
+    int pos;
+    string filename;
+    int endpos;
+    ifstream ifs;
 
+  public:
+    FileSplitter(string filename) : filename(filename){
+      ifstream ifs(filename, ios::binary | ios::ate);
+      pos = ifs.tellg();
+      ifs.seekg(0, ios::beg);
+    }
+
+    void nextChunkToMesage(message& msg) {
+      //validate that has bytes to read
+      if (!isOver()){
+        //the chunk size is half Mib = 2^16 bytes
+        vector<char> bytes(65536);
+        //verify if isn't the last part
+        if( pos <= (endpos - 65536) ){
+          ifs.read(bytes.data(), pos);
+        }else{
+          //if is the las part
+          ifs.read(bytes.data(), endpos);
+        }
+        msg.add_raw(bytes.data(), bytes.size());
+      }
+    }
+    
+    bool isOver(){
+      return pos >= endpos;
+    }
+};
+
+  int StringToNumber ( const string &Text )
+  {
+     istringstream ss(Text);
+     int result;
+     return ss >> result ? result : 0;
+  }
+  template <typename T>
+  string NumberToString ( T Number )
+  {
+     ostringstream ss;
+     ss << Number;
+     return ss.str();
+  }
 void listf(socket &s);
 void uploadf(socket &s);
 void downloadf(socket &s);
@@ -160,11 +214,25 @@ void downloadf(socket &s){
   }else if(answer == "good"){
     //recive the file
     s.send("ready to receive");
-    s.receive(m);
-    filename = "downloaded_" + filename;
-    messageToFile(m,filename);
-
+    //receive the number of parts
     clean_message(m);
+    s.receive(m);
+    int number_of_parts = 0;
+    string tmpstr;
+    int num = m.parts();
+    string cosas;
+    cosas = m.get(0);
+    number_of_parts = StringToNumber(cosas);
+    clean_message(m);
+    s.send("everything is well");
+    for (int i = 0; i < number_of_parts; ++i)
+    {
+      s.receive(m);
+      s.send("ACK");
+      messageToFile(m,filename+NumberToString(i));
+      clean_message(m);
+    }
+    s.receive(m);
     cout << "Finished" << endl;
   }
 }
