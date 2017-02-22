@@ -1,12 +1,4 @@
-#include <zmqpp/zmqpp.hpp>
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <sstream>
-#include <string>
-
-using namespace std;
-using namespace zmqpp;
+#include "hermes.cc"
 
 // formating the code: clang-format -i server.cc
 
@@ -19,79 +11,11 @@ send a list of files stored into disk
 remove files with a command
 */
 
-class FileSplitter {
-  protected:
-    int pos;
-    string filename;
-    int endpos;
-
-  public:
-    FileSplitter(string filename) : filename(filename){
-      ifstream ifs(filename, ios::binary | ios::ate);
-      endpos = ifs.tellg();
-      ifs.seekg(0, ios::beg);
-      pos = ifs.tellg();
-    }
-
-    int getNumberOfParts(){
-      return endpos / 65536 + (endpos % 65536 > 0);
-    }
-
-    void nextChunkToMesage(message& msg) {
-      ifstream ifs(filename, ios::binary);
-      //validate that has bytes to read
-      if (!isOver()){
-        //the chunk size is half Mib = 2^16 bytes
-        //verify if isn't the last part
-        if( pos <= (endpos - 65536) ){
-          vector<char> bytes(65536);
-          ifs.seekg(pos);
-          ifs.read(bytes.data(), 65536);
-          ifs.seekg(pos + 65536);
-          pos = pos + 65536;
-          msg.add_raw(bytes.data(), bytes.size());
-        }else{
-          vector<char> bytes(endpos-pos);
-          ifs.seekg(pos);
-          //if is the las part
-          ifs.read(bytes.data(), endpos-pos);
-          pos = endpos;
-          msg.add_raw(bytes.data(), bytes.size());
-        }
-      }
-    }
-    
-    bool isOver(){
-      return pos >= endpos;
-    }
-};
-
-template <typename T>
-  T StringToNumber ( const string &Text )
-  {
-     istringstream ss(Text);
-     T result;
-     return ss >> result ? result : 0;
-  }
-  template <typename T>
-  string NumberToString ( T Number )
-  {
-     ostringstream ss;
-     ss << Number;
-     return ss.str();
-  }
 
 void listf(socket &s, const string &files);
 void uploadf(socket &s,string filename, string &files);
 void downloadf(socket &s,string filename);
 void erasef(socket &s, string filename, string &files);
-
-void seek_n_destroy(string& victim, string& part);
-
-void clean_message(message& m);
-void messageToFile(const message& msg, const string& fileName);
-vector<char> readFileToBytes(const string& fileName) ;
-void fileToMesage(const string& fileName, message& msg);
 
 int main(int argc, char *argv[])
 {
@@ -218,7 +142,7 @@ void downloadf(socket &s,string filename)
   FileSplitter chop(filename);
   int number_of_parts = chop.getNumberOfParts();
   string tmp;
-  tmp = NumberToString(number_of_parts);
+  tmp = number_to_string(number_of_parts);
   m << tmp;
   s.send(m);
   cout << "Sending " << number_of_parts << " parts" << endl;
@@ -253,61 +177,4 @@ void erasef(socket &s, string filename , string &files)
     seek_n_destroy(files,filename);
   }
   return ;
-}
-
-//other functions (A.K.A. auxiliary functions)
-
-void seek_n_destroy(string& victim, string& part)
-{
-  //kill 'em all
-  //get the size
-  size_t n = part.length();
-  for (size_t i = victim.find(part);
-    i != string::npos;
-    i = victim.find(part))
-    {
-      //search and erase the part from the victim
-      victim.erase(i, n);
-    }
-}
-
-//wipe all the garbage from the message
-void clean_message(message& m)
-{
-  while(m.parts() > 0){
-    m.pop_back();
-  }
-}
-
-//file manager functions
-void messageToFile(const message& msg, const string& fileName)
-{
-  //put a message in a file
-  const void *data;
-  msg.get(&data, 0);
-  size_t size = msg.size(0);
-
-  ofstream ofs(fileName, ios::binary);
-  ofs.write((char*)data, size);
-}
-
-vector<char> readFileToBytes(const string& fileName)
-{
-  //read binarily a file
-  ifstream ifs(fileName, ios::binary | ios::ate);
-  ifstream::pos_type pos = ifs.tellg();
-
-  vector<char> result(pos);
-
-  ifs.seekg(0, ios::beg);
-  ifs.read(result.data(), pos);
-
-  return result;
-}
-
-void fileToMesage(const string& fileName, message& msg)
-{
-  //put a file in a message
-  vector<char> bytes = readFileToBytes(fileName);
-  msg.add_raw(bytes.data(), bytes.size());
 }
