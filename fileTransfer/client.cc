@@ -161,7 +161,8 @@ void downloadf(socket &s){
     //recive the file
     s.send("ready to receive");
     s.receive(m);
-    filename = "downloaded_" + filename;
+    //prefix
+    //filename = "downloaded_" + filename;
     messageToFile(m,filename);
 
     clean_message(m);
