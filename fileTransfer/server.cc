@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <regex>
 
 using namespace std;
 using namespace zmqpp;
@@ -20,7 +21,9 @@ remove files with a command
 void listf(socket &s, const string &files);
 void uploadf(socket &s,string filename, string &files);
 void downloadf(socket &s,string filename);
-void erasef(socket &s, string &files);
+void erasef(socket &s, string filename, string &files);
+
+void seek_n_destroy(string& victim, string& part);
 
 void clean_message(message& m);
 void messageToFile(const message& msg, const string& fileName);
@@ -67,9 +70,10 @@ int main(int argc, char *argv[]) {
     {
       req >> fname;
       downloadf(s,fname);
-    }else if (option == "")
+    }else if (option == "erase")
     {
-      /* code */
+      req >> fname;
+      erasef(s,fname,files);
     }else{
 
     }
@@ -135,8 +139,30 @@ void downloadf(socket &s,string filename){
   
 }
 
-void erasef(socket &s, string &files){}
+void erasef(socket &s, string filename , string &files){
+  //try to delete a file and send the result to the client
+  cout << "Client erasing "<< filename << "... ";
+   if( remove( filename.c_str() ) != 0 ){
 
+    s.send("Error deleting file" );
+    cout << "Error" << endl;
+   }else{
+    s.send("File successfully deleted" );
+    cout << "Ok" << endl;
+    //if ok then delete the file from the list
+    seek_n_destroy(filename,files);
+  }
+  return ;
+}
+
+//other functions
+
+void seek_n_destroy(string& victim, string& part)
+{
+  //kill 'em all
+  regex pattern(part);
+  cout << regex_replace(victim, pattern, "");
+}
 //file manager functions
 void clean_message(message& m){
   while(m.parts() > 0){

@@ -169,7 +169,27 @@ void downloadf(socket &s){
   }
 }
 
-void erasef(socket &s){}
+void erasef(socket &s){
+   //ask for the file deletion
+  string filename;
+
+  //get the name of the file
+  cout << "write the filename: ";
+  cin >> filename;
+
+  //the privated client-server comand
+  string cmd = "erase";
+  string answer;
+
+  message m;
+  create_message(cmd, filename, m);
+  s.send(m);
+
+  s.receive(m);
+  m >> answer;
+
+  cout << "Attempting to delete a file from the server..." << answer << endl;
+}
 
 
 //Functions of messaging & file manage
