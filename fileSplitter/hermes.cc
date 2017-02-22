@@ -124,7 +124,7 @@ vector<char> readFileToBytes(const string& fileName)
   return result;
 }
 
-void fileToMesage(const string& fileName, message& msg)
+void fileToMessage(const string& fileName, message& msg)
 {
   //put a file in a message
   vector<char> bytes = readFileToBytes(fileName);

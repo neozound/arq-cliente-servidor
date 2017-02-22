@@ -30,7 +30,7 @@ int string_to_number ( const string &Text );
 string number_to_string ( int number );
 void clean_message(message& m);
 vector<char> readFileToBytes(const string& fileName) ;
-void fileToMesage(const string& fileName, message& msg);
+void fileToMessage(const string& fileName, message& msg);
 void messageToFile(const message& msg, const string& fileName);
 void messageToPartialFile(const message& msg, const string& fileName);
 void create_message(const string& cmd, const string& filename, message& msg);

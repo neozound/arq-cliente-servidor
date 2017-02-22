@@ -106,7 +106,7 @@ void uploadf(socket &s){
 
   clean_message(m);
 
-  fileToMesage(filename,m);
+  fileToMessage(filename,m);
   s.send(m);
   s.receive(m);
 
