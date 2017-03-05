@@ -87,7 +87,7 @@ void listf(socket &socket_broker, string username){
 
 void uploadf(socket &socket_broker, string username){
   //declaration
-  string filename;
+  string filename,new_filename;
 
   //get the name of the file
   cout << "write the filename: ";
@@ -128,29 +128,28 @@ void uploadf(socket &socket_broker, string username){
     return;
   }
     m >> servip;
+    m >> new_filename;
     //establish new connection in an existent context
     cout << servip << endl;
-    return;
     context srvr;
     socket socket_server(srvr, socket_type::push);
     socket_server.connect(servip);
     clean_message(m);
-    //it's ready to send the file
+    //calculate the numeber of parts
     int number_of_parts = chop.getNumberOfParts();
     string tmp;
     tmp = number_to_string(number_of_parts);
-    m << username << cmd << filename << ssize << tmp;
+    //send the message
+    m << cmd << new_filename << ssize << tmp ;
     socket_server.send(m);
     clean_message(m);
-    //to this time te server is ready to receive all of the data
-  while(!chop.isOver()){
-    chop.nextChunkToMesage(m);
-    socket_server.send(m);
-    clean_message(m);
-  }
-  //ACK from the server
-  socket_server.receive(m);
-
+    //start to send the parts of the file
+    while(!chop.isOver()){
+      chop.nextChunkToMesage(m);
+      socket_server.send(m);
+      clean_message(m);
+    }
+    return;  ///--------------------------
 }
 
 void downloadf(socket &socket_broker, string username){

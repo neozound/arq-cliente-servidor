@@ -9,6 +9,8 @@ recieving incomming connections of a client
 and send to the apropiate server
 */
 
+Server::Server(string id, string ip) : id(id),ip(ip) {}
+
 int main(int argc, char *argv[])
 {
   // initialize the context (blackbox)
@@ -53,14 +55,14 @@ int main(int argc, char *argv[])
               //select the best server
               string file,ip;
               file = username + "_uploaded_" + filename;
-              int server_id = selectServer(file, size);
-              if (server_id == -1)
+              string server_id = selectServer(file, size);
+              if (server_id == "null")
               {
                 socket_clients.send("no ok :(");
               }else{
                 ip = getServerIp(server_id);
                 clean_message(mc);
-                mc << "ok" << ip;
+                mc << "ok" << ip << file;
                 socket_clients.send(mc);
                 //update the list of servers
                 update_upload(server_id, file, size);
@@ -83,7 +85,16 @@ int main(int argc, char *argv[])
             ms >> str_id;
             ms >> cmd;
             if (cmd == "connect"){
-              cout << "se ha conectado el servidor " << str_id << endl;
+              cout << "the server " << str_id << " is now online"<< endl;
+            }
+            if (cmd == "busy"){
+              cout << "the server " << str_id  << " is now in a busy state"<< endl;
+            }
+            if (cmd == "ready"){
+              cout << "the server " << str_id  << " is now ready"<< endl;
+            }
+            if (cmd == "disconnect"){
+              cout << "the server " << str_id  << " is now offline"<< endl;
             }
           }
           //if the stdin has messages
@@ -94,16 +105,16 @@ int main(int argc, char *argv[])
     }
 }
 
-int selectServer(string file, string size){
-  int id= -1;
+string selectServer(string file, string size){
+  string id("serv1");
   return id;
 }
 
-string getServerIp(int server_id){
+string getServerIp(string server_id){
   string ip("tcp://localhost:4244");
   return ip;
 }
 
-void update_upload(int server_id, string file, string size){
+void update_upload(string server_id, string file, string size){
   return;
 }

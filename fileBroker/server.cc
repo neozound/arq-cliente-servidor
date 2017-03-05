@@ -30,22 +30,63 @@ int main(int argc, char *argv[])
   // initialize the context (blackbox)
   context bbox;
   // generate a reply socket
-  socket s(bbox, socket_type::push);
+  socket socket_broker(bbox, socket_type::push);
+  socket socket_clients(bbox, socket_type::pull);
   // bind to the socket
-  s.connect("tcp://localhost:4243");
+  socket_broker.connect("tcp://localhost:4243");
+  socket_clients.bind("tcp://*:4244");
 
   //send a echo of connect
-  message req;
-  req << sid << "connect";
-  s.send(req);
-  clean_message(req);
+  message mess;
+  mess << sid << "connect";
+  socket_broker.send(mess);
+  clean_message(mess);
 
-  //the eternal loop
-  while (true)
-  {
-    // receive the message
-    
+  while (true){
+    string uname,cmd,fname,size,parts;
+    socket_clients.receive(mess);
+    //the message sintax is:
+    //command, filename, size, nparts
+    mess >> cmd;
+    if(cmd == "upload"){
+      mess >> fname;
+      mess >> size;
+      mess >> parts;
+      int nparts = string_to_number(parts);
+      clean_message(mess);
+      cout << "Incomming file: " << fname << " (" << size << " bytes )" << endl;
+
+      //send to broker: busy
+      mess << sid << "busy";
+      socket_broker.send(mess);
+      clean_message(mess);
+
+      //start to receive the file
+      remove( fname.c_str() );
+      for (int i = 0; i < nparts; ++i)
+      {
+        socket_clients.receive(mess);
+        messageToPartialFile(mess,fname);
+        clean_message(mess);
+      }
+
+      //send to broker: ready
+      mess << sid << "ready";
+      socket_broker.send(mess);
+      clean_message(mess);
+    }
+
   }
+ 
+  //ready
+  mess << sid << "ready";
+  socket_broker.send(mess);
+  clean_message(mess);
+  //disconnect
+  mess << sid << "disconnect";
+  socket_broker.send(mess);
+  clean_message(mess);
+
 }
 
 //the name of the function indiques the request of the client

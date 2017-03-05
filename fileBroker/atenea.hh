@@ -5,20 +5,24 @@
 
 class Server {
   protected:
-    int id;
-    int max_size;
-    int available_space;
+    string id;
+    long long int max_size;
+    string status; //online, offline, busy, ready
+    long long int available_space;
     string ip;
     vector<string> file_list;
 
   public:
-    Server();
+    Server(string id,string ip);
     bool isAvailable();
+    long long int availableSpace();
+    void changeStatus(string new_status);
+
 
 };
 
-int selectServer(string file, string size);
-string getServerIp(int server_id);
-void update_upload(int server_id, string file, string size);
+string selectServer(string file, string size);
+string getServerIp(string server_id);
+void update_upload(string server_id, string file, string size);
 
 #endif
