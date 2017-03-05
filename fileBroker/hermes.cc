@@ -10,7 +10,12 @@ FileSplitter::FileSplitter(string filename) : filename(filename)
 
 int FileSplitter::getNumberOfParts()
 {
-  return endpos / 65536 + (endpos % 65536 > 0);
+  return endpos / CHUNK_SIZE + (endpos % CHUNK_SIZE > 0);
+}
+
+int FileSplitter::getSize()
+{
+  return (int) endpos;
 }
 
 void FileSplitter::nextChunkToMesage(message& msg)
@@ -21,13 +26,13 @@ void FileSplitter::nextChunkToMesage(message& msg)
   {
         //the chunk size is half Mib = 2^16 bytes
         //verify if isn't the last part
-    if( pos <= (endpos - 65536) )
+    if( pos <= (endpos - CHUNK_SIZE) )
     {
-      vector<char> bytes(65536);
+      vector<char> bytes(CHUNK_SIZE);
       ifs.seekg(pos);
-      ifs.read(bytes.data(), 65536);
-      ifs.seekg(pos + 65536);
-      pos = pos + 65536;
+      ifs.read(bytes.data(), CHUNK_SIZE);
+      ifs.seekg(pos + CHUNK_SIZE);
+      pos = pos + CHUNK_SIZE;
       msg.add_raw(bytes.data(), bytes.size());
     }else{
       vector<char> bytes(endpos-pos);
@@ -129,4 +134,13 @@ void fileToMessage(const string& fileName, message& msg)
   //put a file in a message
   vector<char> bytes = readFileToBytes(fileName);
   msg.add_raw(bytes.data(), bytes.size());
+}
+
+vector<string> explode(string &big_string) {
+    stringstream schutzstaffel(big_string);
+    vector<string> individual_strings;
+    string little_string;
+    while (schutzstaffel >> little_string)
+        individual_strings.push_back(little_string);
+    return individual_strings;
 }

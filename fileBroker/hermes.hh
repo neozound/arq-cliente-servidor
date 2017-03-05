@@ -10,6 +10,8 @@
 #include <iterator>
 #include <vector>
 
+#define CHUNK_SIZE 65536
+
 using namespace std;
 using namespace zmqpp;
 
@@ -24,6 +26,7 @@ class FileSplitter {
     int getNumberOfParts();
     void nextChunkToMesage(message& msg);    
     bool isOver();
+    int getSize();
 };
 
 int string_to_number ( const string &Text );
@@ -35,6 +38,7 @@ void messageToFile(const message& msg, const string& fileName);
 void messageToPartialFile(const message& msg, const string& fileName);
 void create_message(const string& cmd, const string& filename, message& msg);
 void seek_n_destroy(string& victim, string& part);
+vector<string> explode(string &big_string);
 
 
 #endif
