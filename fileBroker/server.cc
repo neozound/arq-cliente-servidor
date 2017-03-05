@@ -19,59 +19,32 @@ void erasef(socket &s, string filename, string &files);
 
 int main(int argc, char *argv[])
 {
+  if ( not ( 2 == argc ) ) {
+    cerr << "Wrong number of arguments, remember to provide your server id" << endl;
+    return 1;
+  }
+  //take the sid
+  string sid(argv[1]);
+  cout << "Welcome " <<  sid <<endl;
+
   // initialize the context (blackbox)
   context bbox;
   // generate a reply socket
-  socket s(bbox, socket_type::reply);
+  socket s(bbox, socket_type::push);
   // bind to the socket
-  s.bind("tcp://*:4242");
-  
-  //string with a list of the uploaded filenames
-  string files;
+  s.connect("tcp://localhost:4243");
+
+  //send a echo of connect
+  message req;
+  req << sid << "connect";
+  s.send(req);
+  clean_message(req);
 
   //the eternal loop
   while (true)
   {
     // receive the message
-    message req;
-    cout << "Receiving message... ";
-    s.receive(req);
-
-    //declaration of the variables
-    string option;
-    string fname;
-    //saving in option the received message
-    req >> option;
-    //print the received option
-    cout << option << endl;
-    //do the correspondient action to the option
-    if (option == "list")
-    {
-      //this list the uploaded files
-      const string chain(files);
-      listf(s,chain);
-    }else if (option == "upload")
-    {
-      //receive a new file, and save it
-      req >> fname;
-      uploadf(s,fname,files);
-    }else if (option == "download")
-    {
-      //send a file to the client
-      req >> fname;
-      downloadf(s,fname);
-    }else if (option == "erase")
-    {
-      //delete a file
-      //without confirmation
-      req >> fname;
-      erasef(s,fname,files);
-    }else{
-      //the default option
-      //in the case of an error in the option
-      //TODO
-    }
-    cout << "Finished." << endl;
+    
   }
 }
 

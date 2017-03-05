@@ -43,15 +43,48 @@ int main(int argc, char *argv[])
             //username, command, filename, size
             mc >> username;
             mc >> cmd;
+            if (cmd == "list"){
+              //do something
+            }
             if(cmd == "upload"){
               mc >> filename;
               mc >> size;
-              cout << "User " << username << " is trying to upload " << size << " bytes from the file " << filename << endl;
+              cout << "User " << username << " is trying to upload " << size << " bytes of the file " << filename << endl;
+              //select the best server
+              string file,ip;
+              file = username + "_uploaded_" + filename;
+              int server_id = selectServer(file, size);
+              if (server_id == -1)
+              {
+                socket_clients.send("no ok :(");
+              }else{
+                ip = getServerIp(server_id);
+                clean_message(mc);
+                mc << "ok" << ip;
+                socket_clients.send(mc);
+                //update the list of servers
+                update_upload(server_id, file, size);
+              }
+            }
+            if (cmd == "download"){
+              //do something 
+            }
+            if (cmd == "erase"){
+              //do something
             }
 
           }
           if(mein_poll.has_input(socket_servers)){
-              //do something
+            string str_id, cmd,filename,size;
+            message ms;//hammer!
+            socket_servers.receive(ms);
+            //the message sintax is:
+            //username, command, total space
+            ms >> str_id;
+            ms >> cmd;
+            if (cmd == "connect"){
+              cout << "se ha conectado el servidor " << str_id << endl;
+            }
           }
           //if the stdin has messages
           if(mein_poll.has_input(console)){
@@ -59,4 +92,18 @@ int main(int argc, char *argv[])
             }
         }
     }
+}
+
+int selectServer(string file, string size){
+  int id= -1;
+  return id;
+}
+
+string getServerIp(int server_id){
+  string ip("tcp://localhost:4244");
+  return ip;
+}
+
+void update_upload(int server_id, string file, string size){
+  return;
 }

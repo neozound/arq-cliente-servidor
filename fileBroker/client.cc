@@ -118,8 +118,7 @@ void uploadf(socket &socket_broker, string username){
   clean_message(m);
   socket_broker.receive(m);
   //the broker send:
-  //status
-  //the server ip and port
+  //status, the server ip and port
   string status;
   string servip;
   m >> status;
@@ -130,6 +129,8 @@ void uploadf(socket &socket_broker, string username){
   }
     m >> servip;
     //establish new connection in an existent context
+    cout << servip << endl;
+    return;
     context srvr;
     socket socket_server(srvr, socket_type::push);
     socket_server.connect(servip);
