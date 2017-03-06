@@ -17,14 +17,15 @@ void erasef(socket &socket_broker, string username);
 
 int main(int argc, char const *argv[]) {
 
-    if ( not ( 3 == argc ) ) {
-      cerr << "Wrong number of arguments, remember to provide your username and the broker ip:port" << endl;
+    if ( not ( 4 == argc ) ) {
+      cerr << "Wrong number of arguments, remember to provide your username, the broker ip & port" << endl;
       return 1;
     }
     //take the username
     string username(argv[1]);
     string broker_ip(argv[2]);
-    broker_ip = "tcp://" + broker_ip;
+    string broker_port(argv[3]);
+    broker_ip = "tcp://" + broker_ip + ":" + broker_port;
     cout << "Welcome " <<  username <<endl;
 
     //Created a context (blackbox)
@@ -215,7 +216,7 @@ void downloadf(socket &socket_broker, string username){
 
 void erasef(socket &socket_broker, string username){
    //ask for the file deletion
-  string filename;
+  string filename,servip;
 
   //get the name of the file
   cout << "write the filename: ";
@@ -224,13 +225,30 @@ void erasef(socket &socket_broker, string username){
   //the privated client-server comand
   string cmd = "erase";
   string answer;
+  string file;
+  string response;
 
   message m;
-  create_message(cmd, filename, m);
+  m << username << cmd << filename;
   socket_broker.send(m);
 
+  cout << "Attempting to delete the file...";
   socket_broker.receive(m);
   m >> answer;
-
-  cout << "Attempting to delete a file from the server..." << answer << endl;
+  if(answer == "ok"){
+    m >> servip;
+    m >> file;
+    //push a message to the server
+    context srvr;
+    socket socket_server(srvr, socket_type::push);
+    socket_server.connect(servip);
+    clean_message(m);
+    m << cmd << file;
+    socket_server.send(m);
+    response = "File deleted successfully";
+  }else if( answer == "notexists"){
+    //do nothing
+    response = "The file doesn't exists";
+  }
+  cout << response << endl;
 }

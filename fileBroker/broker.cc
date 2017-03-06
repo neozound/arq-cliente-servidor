@@ -77,7 +77,22 @@ int main(int argc, char *argv[])
               //do something 
             }
             if (cmd == "erase"){
-              //do something
+              mc >> filename;
+              string file;
+              file = username + "_uploaded_" + filename;
+              //check if the file exists
+              string location_ip = locate_file(file,servers);
+              if("null" == location_ip){
+                //no exists!
+                socket_clients.send("notexists");
+              }else{
+                //file exists
+                clean_message(mc);
+                mc << "ok" << location_ip << file;
+                socket_clients.send(mc);
+                //delete from the database
+                delete_file(file,servers);
+              }
             }
 
           }
@@ -170,6 +185,15 @@ string files_of_user(string username,vector<Server> &servers){
   return files;
 }
 
+void delete_file(string fname,vector<Server> &servers){
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
+  {
+    Server &serv_i = *it;
+    serv_i.deleteFile(fname);
+  }
+}
+
+
 //-------------------------
 // Class functions
 //-------------------------
@@ -226,4 +250,16 @@ string Server::getFilesOfUser(string username){
     }
   }
   return files;
+}
+
+void Server::deleteFile(string fname){
+  vector<string>::iterator to_delete;
+  for (vector<string>::iterator it = file_list.begin(); it != file_list.end(); ++it)
+  {
+    string &file_i = *it;
+    if (file_i == fname){
+    to_delete= it;
+    }
+  }
+  file_list.erase(to_delete);
 }

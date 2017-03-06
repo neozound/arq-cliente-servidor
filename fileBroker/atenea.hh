@@ -22,6 +22,7 @@ class Server {
     void addFile(string filename, long long int size );
     bool fileExists(string filename);
     string getFilesOfUser(string username);
+    void deleteFile(string fname);
 
 
 };
@@ -30,5 +31,6 @@ string selectServer(string file, string size,vector<Server> &servers);
 void update_upload(string server_id, string file, string size,vector<Server> &servers);
 string locate_file(string filename,vector<Server> &servers);
 string files_of_user(string user,vector<Server> &servers);
+void delete_file(string fname,vector<Server> &servers);
 
 #endif

@@ -15,7 +15,7 @@ remove files with a command
 void listf(socket &s, const string &files);
 void uploadf(socket &s,string filename, string &files);
 void downloadf(socket &s,string filename);
-void erasef(socket &s, string filename, string &files);
+void erasef(string filename);
 
 int main(int argc, char *argv[])
 {
@@ -92,6 +92,18 @@ int main(int argc, char *argv[])
       mess << full_ip << "ready";
       socket_broker.send(mess);
       clean_message(mess);
+    }else if (cmd == "erase"){
+      mess >> fname;
+      //send to broker: busy
+      mess << full_ip << "busy";
+      socket_broker.send(mess);
+      clean_message(mess);
+      //remove the file
+      remove( fname.c_str() );
+      //send to broker: ready
+      mess << full_ip << "ready";
+      socket_broker.send(mess);
+      clean_message(mess);
     }
 
   }
@@ -105,48 +117,6 @@ int main(int argc, char *argv[])
   socket_broker.send(mess);
   clean_message(mess);
 
-}
-
-//the name of the function indiques the request of the client
-
-void listf(socket &s, const string &files)
-{
-  //create a message an put in it the files list
-  message m;
-  m << files;
-  //send to the client the files list
-  s.send(m);
-  //report the action
-  cout << "A client asked for list" << endl;
-}
-
-void uploadf(socket &s,string filename, string &files)
-{
-  //create a message and start a "conversation" with the client
-  message m;
-  s.send("Ready to recieve");
-  
-  s.receive(m);
-    int number_of_parts = 0;
-    string cosas;
-    cosas = m.get(0);
-    number_of_parts = string_to_number(cosas);
-    clean_message(m);
-    s.send("everything is well");
-    //define the prefix
-    filename = "new_" + filename;
-    remove( filename.c_str() );
-    for (int i = 0; i < number_of_parts; ++i)
-    {
-      s.receive(m);
-      s.send("ACK");
-      messageToPartialFile(m,filename);
-      clean_message(m);
-    }
-  
-  //after saved the file add it to the 
-  seek_n_destroy(files,filename);
-  files += "\n" + filename;
 }
 
 void downloadf(socket &s,string filename)
@@ -198,22 +168,3 @@ void downloadf(socket &s,string filename)
   cout << "ok" << endl;
 }
 
-void erasef(socket &s, string filename , string &files)
-{
-  //report what the hell are the client trying to do 
-  cout << "Client erasing "<< filename << "... ";
-  //try to delete a file and send the result to the client
-  if( remove( filename.c_str() ) != 0 ){
-    //report the bad news
-    s.send("Error deleting file" );
-    cout << "Error" << endl;
-  }else{
-    // proclaim the good news
-    s.send("File successfully deleted" );
-    cout << "Ok" << endl;
-    //if ok then delete the file from the list
-    filename = "\n" + filename;
-    seek_n_destroy(files,filename);
-  }
-  return ;
-}
