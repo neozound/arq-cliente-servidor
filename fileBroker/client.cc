@@ -17,12 +17,14 @@ void erasef(socket &socket_broker, string username);
 
 int main(int argc, char const *argv[]) {
 
-    if ( not ( 2 == argc ) ) {
-      cerr << "Wrong number of arguments, remember to provide your username" << endl;
+    if ( not ( 3 == argc ) ) {
+      cerr << "Wrong number of arguments, remember to provide your username and the broker ip:port" << endl;
       return 1;
     }
     //take the username
     string username(argv[1]);
+    string broker_ip(argv[2]);
+    broker_ip = "tcp://" + broker_ip;
     cout << "Welcome " <<  username <<endl;
 
     //Created a context (blackbox)
@@ -30,7 +32,7 @@ int main(int argc, char const *argv[]) {
     //BROKER CONNECTION
     //Created the socket and the conection
     socket socket_broker(brkr, socket_type::request);
-    socket_broker.connect("tcp://localhost:4242");
+    socket_broker.connect(broker_ip);
 
     char option=' ';
     cout << "Available options:" << endl;
