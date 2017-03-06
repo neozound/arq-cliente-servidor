@@ -75,9 +75,10 @@ int main(int argc, char const *argv[]) {
 
 void listf(socket &socket_broker, string username){
     //ask for list
-    message req;
-    req << "list";
-    socket_broker.send(req);
+    message m;
+    string cmd("list");
+    m << username << cmd;
+    socket_broker.send(m);
     //wait for answer
     message ans;
     string chain;

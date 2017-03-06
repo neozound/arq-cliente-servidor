@@ -44,7 +44,9 @@ int main(int argc, char *argv[])
             mc >> username;
             mc >> cmd;
             if (cmd == "list"){
-              //do something
+              string filelist;
+              filelist = files_of_user(username,servers);
+              socket_clients.send(filelist);
             }
             if(cmd == "upload"){
               mc >> filename;
@@ -158,6 +160,16 @@ string locate_file(string filename,vector<Server> &servers){
   return my_ip;
 }
 
+string files_of_user(string username,vector<Server> &servers){
+  string files("");
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
+  {
+    Server &serv_i = *it;
+    files = files + serv_i.getFilesOfUser(username);
+  }
+  return files;
+}
+
 //-------------------------
 // Class functions
 //-------------------------
@@ -198,4 +210,20 @@ bool Server::fileExists(string filename){
     exist = exist or (filename == fname);
   }
   return exist;
+}
+
+string Server::getFilesOfUser(string username){
+  string files("");
+  for (string fname : file_list)
+  {
+    vector<string> parts;
+    parts = explode(fname,"_");
+    string uname = parts[0];
+    string partial_name = parts[1] +"."+ parts[2];
+    if(uname == username){
+      //the file belongs to the user
+      files = files + "\n" + partial_name;
+    }
+  }
+  return files;
 }

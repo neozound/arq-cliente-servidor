@@ -6,6 +6,7 @@
 #include <fstream>
 #include <cmath>
 #include <sstream>
+#include <regex>
 #include <string>
 #include <iterator>
 #include <vector>
@@ -40,7 +41,7 @@ void messageToFile(const message& msg, const string& fileName);
 void messageToPartialFile(const message& msg, const string& fileName);
 void create_message(const string& cmd, const string& filename, message& msg);
 void seek_n_destroy(string& victim, string& part);
-vector<string> explode(string &big_string);
+vector<string> explode(string &big_string,string token);
 
 
 #endif

@@ -150,11 +150,17 @@ void fileToMessage(const string& fileName, message& msg)
   msg.add_raw(bytes.data(), bytes.size());
 }
 
-vector<string> explode(string &big_string) {
-    stringstream schutzstaffel(big_string);
-    vector<string> individual_strings;
-    string little_string;
-    while (schutzstaffel >> little_string)
-        individual_strings.push_back(little_string);
-    return individual_strings;
+vector<string> explode(string &big_string, string token) {
+  vector<string> individual_strings;
+  regex rex("(.*)_uploaded_(.*)\\.(....?)");
+  smatch m;
+  regex_match(big_string,m,rex);
+  //0 position is the whole string
+  for (unsigned int i = 1; i < m.size(); ++i)
+  {
+    ssub_match sm = m[i];
+    string little_string = sm.str();
+    individual_strings.push_back(little_string);
+  }
+  return individual_strings;
 }
