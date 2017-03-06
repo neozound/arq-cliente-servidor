@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
                 mc << "ok" << server_ip << file;
                 socket_clients.send(mc);
                 //update the list of servers
-                update_upload(server_ip, file, size);
+                update_upload(server_ip, file, size,servers);
               }
             }
             if (cmd == "download"){
@@ -108,11 +108,12 @@ int main(int argc, char *argv[])
 
 string selectServer(string file, string size, vector<Server> &servers){
   float lowest_charge = 100; //percent of charge
+  long long int nsize = string_to_big_number(size);
   string selected_ip("null");
   for(auto serv_i : servers)
   {
-    if (serv_i.isAvailable()){
-      //take every available server
+    if (serv_i.isAvailable() and nsize < serv_i.availableSpace()){
+      //take every available server with enough space to save the file
       //and select te ip (only if the charge is lower)
       float charge = serv_i.getCharge();
       if (charge < lowest_charge){
@@ -125,8 +126,16 @@ string selectServer(string file, string size, vector<Server> &servers){
   return selected_ip;
 }
 
-void update_upload(string server_ip, string file, string size){
-  return;
+void update_upload(string server_ip, string file, string size,vector<Server> &servers){
+  for(auto serv_i : servers)
+  {
+    if (serv_i.getAddress() == server_ip)
+    {
+      //find the correct server, and update the info
+      long long int nsize = string_to_big_number(size);
+      serv_i.addFile(file,nsize);
+    }
+  }
 }
 
 
@@ -143,8 +152,17 @@ bool Server::isAvailable(){
   return ("ready" == status);
 }
 
+long long int Server::availableSpace(){
+  return available_space;
+}
+
 float Server::getCharge(){
   float charge;
     charge = 100 - (available_space*100/max_size);
   return charge;
+}
+
+void Server::addFile(string filename, long long int size ){
+  file_list.push_back(filename);
+  available_space -= size;
 }

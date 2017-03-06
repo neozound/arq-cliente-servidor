@@ -19,11 +19,12 @@ class Server {
     void changeStatus(string new_status);
     string getAddress();
     float getCharge();
+    void addFile(string filename, long long int size );
 
 
 };
 
 string selectServer(string file, string size,vector<Server> &servers);
-void update_upload(string server_id, string file, string size);
+void update_upload(string server_id, string file, string size,vector<Server> &servers);
 
 #endif
