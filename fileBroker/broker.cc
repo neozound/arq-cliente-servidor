@@ -8,11 +8,9 @@ It is capable of
 recieving incomming connections of a client
 and send to the apropiate server
 */
-
-Server::Server(string id, string ip) : id(id),ip(ip) {}
-
 int main(int argc, char *argv[])
 {
+  vector<Server> servers;
   // initialize the context (blackbox)
   context sbox;
   context cbox;
@@ -53,19 +51,18 @@ int main(int argc, char *argv[])
               mc >> size;
               cout << "User " << username << " is trying to upload " << size << " bytes of the file " << filename << endl;
               //select the best server
-              string file,ip;
+              string file;
               file = username + "_uploaded_" + filename;
-              string server_id = selectServer(file, size);
-              if (server_id == "null")
+              string server_ip = selectServer(file, size,servers);
+              if (server_ip == "null")
               {
                 socket_clients.send("no ok :(");
               }else{
-                ip = getServerIp(server_id);
                 clean_message(mc);
-                mc << "ok" << ip << file;
+                mc << "ok" << server_ip << file;
                 socket_clients.send(mc);
                 //update the list of servers
-                update_upload(server_id, file, size);
+                update_upload(server_ip, file, size);
               }
             }
             if (cmd == "download"){
@@ -77,24 +74,26 @@ int main(int argc, char *argv[])
 
           }
           if(mein_poll.has_input(socket_servers)){
-            string str_id, cmd,filename,size;
+            string server_ip, cmd,filename,size;
             message ms;//hammer!
             socket_servers.receive(ms);
             //the message sintax is:
-            //username, command, total space
-            ms >> str_id;
+            //username, command, ip address
+            ms >> server_ip;
             ms >> cmd;
             if (cmd == "connect"){
-              cout << "the server " << str_id << " is now online"<< endl;
+              cout << "the server " << server_ip << " is now online"<< endl;
+              Server new_server(server_ip);
+              servers.push_back(new_server);
             }
             if (cmd == "busy"){
-              cout << "the server " << str_id  << " is now in a busy state"<< endl;
+              cout << "the server " << server_ip  << " is now in a busy state"<< endl;
             }
             if (cmd == "ready"){
-              cout << "the server " << str_id  << " is now ready"<< endl;
+              cout << "the server " << server_ip  << " is now ready"<< endl;
             }
             if (cmd == "disconnect"){
-              cout << "the server " << str_id  << " is now offline"<< endl;
+              cout << "the server " << server_ip  << " is now offline"<< endl;
             }
           }
           //if the stdin has messages
@@ -105,16 +104,30 @@ int main(int argc, char *argv[])
     }
 }
 
-string selectServer(string file, string size){
-  string id("serv1");
-  return id;
+string selectServer(string file, string size, vector<Server> &servers){
+  for(auto serv_i : servers)
+  {
+    if (serv_i.isAvailable()){
+      return serv_i.getAddress();
+    }
+  }
+  string no_id("null");
+  return no_id;
 }
 
-string getServerIp(string server_id){
-  string ip("tcp://localhost:4244");
+void update_upload(string server_ip, string file, string size){
+  return;
+}
+
+
+Server::Server(string ip) :ip(ip) {
+  status = "ready";
+}
+
+string Server::getAddress(){
   return ip;
 }
 
-void update_upload(string server_id, string file, string size){
-  return;
+bool Server::isAvailable(){
+  return (status == "ready");
 }

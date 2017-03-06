@@ -19,13 +19,13 @@ void erasef(socket &s, string filename, string &files);
 
 int main(int argc, char *argv[])
 {
-  if ( not ( 2 == argc ) ) {
-    cerr << "Wrong number of arguments, remember to provide your server id" << endl;
+  if ( not ( 3 == argc ) ) {
+    cerr << "Wrong number of arguments, remember to provide your server ip address and port" << endl;
     return 1;
   }
   //take the sid
-  string sid(argv[1]);
-  cout << "Welcome " <<  sid <<endl;
+  string sip(argv[1]);
+  string port(argv[2]);
 
   // initialize the context (blackbox)
   context bbox;
@@ -34,11 +34,17 @@ int main(int argc, char *argv[])
   socket socket_clients(bbox, socket_type::pull);
   // bind to the socket
   socket_broker.connect("tcp://localhost:4243");
-  socket_clients.bind("tcp://*:4244");
+  string cip("tcp://*:");
+  cip = cip + port;
+  socket_clients.bind(cip);
+
+  //full ip is de identity of the server
+  string full_ip("tcp://");
+  full_ip += sip + ":" + port;
 
   //send a echo of connect
   message mess;
-  mess << sid << "connect";
+  mess << full_ip << "connect";
   socket_broker.send(mess);
   clean_message(mess);
 
@@ -57,7 +63,7 @@ int main(int argc, char *argv[])
       cout << "Incomming file: " << fname << " (" << size << " bytes )" << endl;
 
       //send to broker: busy
-      mess << sid << "busy";
+      mess << full_ip << "busy";
       socket_broker.send(mess);
       clean_message(mess);
 
@@ -71,7 +77,7 @@ int main(int argc, char *argv[])
       }
 
       //send to broker: ready
-      mess << sid << "ready";
+      mess << full_ip << "ready";
       socket_broker.send(mess);
       clean_message(mess);
     }
@@ -79,11 +85,11 @@ int main(int argc, char *argv[])
   }
  
   //ready
-  mess << sid << "ready";
+  mess << full_ip << "ready";
   socket_broker.send(mess);
   clean_message(mess);
   //disconnect
-  mess << sid << "disconnect";
+  mess << full_ip << "disconnect";
   socket_broker.send(mess);
   clean_message(mess);
 
