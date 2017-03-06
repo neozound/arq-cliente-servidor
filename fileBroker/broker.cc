@@ -110,9 +110,10 @@ string selectServer(string file, string size, vector<Server> &servers){
   float lowest_charge = 100; //percent of charge
   long long int nsize = string_to_big_number(size);
   string selected_ip("null");
-  for(auto serv_i : servers)
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
   {
-    if (serv_i.isAvailable() and nsize < serv_i.availableSpace()){
+    Server &serv_i = *it;
+    if (serv_i.isAvailable() and nsize <= serv_i.availableSpace()){
       //take every available server with enough space to save the file
       //and select te ip (only if the charge is lower)
       float charge = serv_i.getCharge();
@@ -127,8 +128,9 @@ string selectServer(string file, string size, vector<Server> &servers){
 }
 
 void update_upload(string server_ip, string file, string size,vector<Server> &servers){
-  for(auto serv_i : servers)
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
   {
+    Server &serv_i = *it;
     if (serv_i.getAddress() == server_ip)
     {
       //find the correct server, and update the info
