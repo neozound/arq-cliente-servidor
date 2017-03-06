@@ -20,11 +20,13 @@ class Server {
     string getAddress();
     float getCharge();
     void addFile(string filename, long long int size );
+    bool fileExists(string filename);
 
 
 };
 
 string selectServer(string file, string size,vector<Server> &servers);
 void update_upload(string server_id, string file, string size,vector<Server> &servers);
+string locate_file(string filename,vector<Server> &servers);
 
 #endif

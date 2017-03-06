@@ -49,20 +49,26 @@ int main(int argc, char *argv[])
             if(cmd == "upload"){
               mc >> filename;
               mc >> size;
-              cout << "User " << username << " is trying to upload " << size << " bytes of the file " << filename << endl;
-              //select the best server
               string file;
               file = username + "_uploaded_" + filename;
-              string server_ip = selectServer(file, size,servers);
-              if (server_ip == "null")
-              {
-                socket_clients.send("no ok :(");
+              //check if the file exists
+              if(not ("null" == locate_file(file,servers))){
+                //existe!
+                socket_clients.send("repeated");
               }else{
-                clean_message(mc);
-                mc << "ok" << server_ip << file;
-                socket_clients.send(mc);
-                //update the list of servers
-                update_upload(server_ip, file, size,servers);
+                cout << "User " << username << " is trying to upload " << size << " bytes of the file " << filename << endl;
+                //select the best server
+                string server_ip = selectServer(file, size,servers);
+                if (server_ip == "null")
+                {
+                  socket_clients.send("no ok :(");
+                }else{
+                  clean_message(mc);
+                  mc << "ok" << server_ip << file;
+                  socket_clients.send(mc);
+                  //update the list of servers
+                  update_upload(server_ip, file, size,servers);
+                }
               }
             }
             if (cmd == "download"){
@@ -140,6 +146,22 @@ void update_upload(string server_ip, string file, string size,vector<Server> &se
   }
 }
 
+string locate_file(string filename,vector<Server> &servers){
+  string my_ip("null");
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
+  {
+    Server &serv_i = *it;
+    if (serv_i.fileExists(filename)){
+      my_ip = serv_i.getAddress();
+    }
+  }
+  return my_ip;
+}
+
+//-------------------------
+// Class functions
+//-------------------------
+
 
 Server::Server(string ip, long long int max_size) :ip(ip),max_size(max_size) {
   status = "ready";
@@ -167,4 +189,13 @@ float Server::getCharge(){
 void Server::addFile(string filename, long long int size ){
   file_list.push_back(filename);
   available_space -= size;
+}
+
+bool Server::fileExists(string filename){
+  bool exist(false);
+  for (string fname : file_list)
+  {
+    exist = exist or (filename == fname);
+  }
+  return exist;
 }

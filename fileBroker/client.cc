@@ -126,7 +126,11 @@ void uploadf(socket &socket_broker, string username){
   m >> status;
   if(status != "ok"){
     //something went wrong
-    cout << "The broker answer with bad news"<< endl;
+    if(status == "repeated"){
+      cout << "The file already exists"<< endl;
+    }else{
+      cout << "The broker answer with bad news"<< endl;
+    }
     return;
   }
     m >> servip;
