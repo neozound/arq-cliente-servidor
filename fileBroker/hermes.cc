@@ -57,7 +57,21 @@ int string_to_number ( const string &Text )
      return ss >> result ? result : 0;
   }
 
+long long int string_to_big_number ( const string &Text )
+  {
+     istringstream ss(Text);
+     long long int result;
+     return ss >> result ? result : 0;
+  }
+
 string number_to_string ( int number )
+{
+   ostringstream ss;
+   ss << number;
+   return ss.str();
+}
+
+string big_number_to_string ( long long int number )
 {
    ostringstream ss;
    ss << number;

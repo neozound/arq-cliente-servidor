@@ -30,7 +30,9 @@ class FileSplitter {
 };
 
 int string_to_number ( const string &Text );
+long long int string_to_big_number ( const string &Text );
 string number_to_string ( int number );
+string big_number_to_string ( long long int number );
 void clean_message(message& m);
 vector<char> readFileToBytes(const string& fileName) ;
 void fileToMessage(const string& fileName, message& msg);

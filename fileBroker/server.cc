@@ -19,13 +19,23 @@ void erasef(socket &s, string filename, string &files);
 
 int main(int argc, char *argv[])
 {
-  if ( not ( 3 == argc ) ) {
+  if ( argc < 3 ) {
     cerr << "Wrong number of arguments, remember to provide your server ip address and port" << endl;
     return 1;
   }
-  //take the sid
-  string sip(argv[1]);
+
+  //take the sip
+  string server_ip(argv[1]);
   string port(argv[2]);
+  //definition of a default max size
+  long long int max_size = 13958643712; //13 Gib
+  if (4 == argc){
+    //if is defined a diferent max size save it
+    max_size = string_to_big_number(argv[3]);
+  }else{
+    cout << "Capacity: " << max_size << " bytes"<< endl;
+    cout << "Remember: you can define the max size after the ip address and port" << endl;
+  }
 
   // initialize the context (blackbox)
   context bbox;
@@ -34,17 +44,19 @@ int main(int argc, char *argv[])
   socket socket_clients(bbox, socket_type::pull);
   // bind to the socket
   socket_broker.connect("tcp://localhost:4243");
-  string cip("tcp://*:");
-  cip = cip + port;
-  socket_clients.bind(cip);
+  string clients_ip("tcp://*:");
+  clients_ip = clients_ip + port;
+  socket_clients.bind(clients_ip);
 
   //full ip is de identity of the server
   string full_ip("tcp://");
-  full_ip += sip + ":" + port;
+  full_ip += server_ip + ":" + port;
 
   //send a echo of connect
   message mess;
-  mess << full_ip << "connect";
+  string msize;
+  msize = big_number_to_string(max_size);
+  mess << full_ip << "connect" << msize;
   socket_broker.send(mess);
   clean_message(mess);
 

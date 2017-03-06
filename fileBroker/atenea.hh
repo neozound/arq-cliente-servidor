@@ -2,21 +2,23 @@
   #define _ATENEA_HH_
 
 #include <unistd.h>
+#include <climits>
 
 class Server {
   protected:
     string ip;
-    long long int max_size;
+    long long int max_size; //bytes
     string status; //online, offline, busy, ready
-    long long int available_space;
+    long long int available_space; //bytes
     vector<string> file_list;
 
   public:
-    Server(string ip);
+    Server(string ip, long long int max_size);
     bool isAvailable();
     long long int availableSpace();
     void changeStatus(string new_status);
     string getAddress();
+    float getCharge();
 
 
 };

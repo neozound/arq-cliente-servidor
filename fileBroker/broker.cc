@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 
           }
           if(mein_poll.has_input(socket_servers)){
-            string server_ip, cmd,filename,size;
+            string server_ip, cmd,filename,max_size;
             message ms;//hammer!
             socket_servers.receive(ms);
             //the message sintax is:
@@ -82,8 +82,10 @@ int main(int argc, char *argv[])
             ms >> server_ip;
             ms >> cmd;
             if (cmd == "connect"){
+              ms >> max_size;
+              long long int msize = string_to_big_number(max_size);
               cout << "the server " << server_ip << " is now online"<< endl;
-              Server new_server(server_ip);
+              Server new_server(server_ip,msize);
               servers.push_back(new_server);
             }
             if (cmd == "busy"){
@@ -105,14 +107,22 @@ int main(int argc, char *argv[])
 }
 
 string selectServer(string file, string size, vector<Server> &servers){
+  float lowest_charge = 100; //percent of charge
+  string selected_ip("null");
   for(auto serv_i : servers)
   {
     if (serv_i.isAvailable()){
-      return serv_i.getAddress();
+      //take every available server
+      //and select te ip (only if the charge is lower)
+      float charge = serv_i.getCharge();
+      if (charge < lowest_charge){
+        selected_ip = serv_i.getAddress();
+        lowest_charge = charge;
+      }
     }
   }
-  string no_id("null");
-  return no_id;
+  //after look all the servers return the selected ip
+  return selected_ip;
 }
 
 void update_upload(string server_ip, string file, string size){
@@ -120,8 +130,9 @@ void update_upload(string server_ip, string file, string size){
 }
 
 
-Server::Server(string ip) :ip(ip) {
+Server::Server(string ip, long long int max_size) :ip(ip),max_size(max_size) {
   status = "ready";
+  available_space = max_size;
 }
 
 string Server::getAddress(){
@@ -129,5 +140,11 @@ string Server::getAddress(){
 }
 
 bool Server::isAvailable(){
-  return (status == "ready");
+  return ("ready" == status);
+}
+
+float Server::getCharge(){
+  float charge;
+    charge = 100 - (available_space*100/max_size);
+  return charge;
 }
