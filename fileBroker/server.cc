@@ -11,12 +11,6 @@ send a list of files stored into disk
 remove files with a command
 */
 
-
-void listf(socket &s, const string &files);
-void uploadf(socket &s,string filename, string &files);
-void downloadf(socket &s,string filename);
-void erasef(string filename);
-
 int main(int argc, char *argv[])
 {
   if ( argc < 3 ) {
@@ -36,14 +30,19 @@ int main(int argc, char *argv[])
     cout << "Capacity: " << max_size << " bytes"<< endl;
     cout << "Remember: you can define the max size after the ip address and port" << endl;
   }
+  string broker_ip;
+  cout << "Please specify the BROKER \"ip:port\"" << endl;
+  cin >> broker_ip;
+  broker_ip = "tcp://" + broker_ip;
 
   // initialize the context (blackbox)
   context bbox;
+  context dbox;
   // generate a reply socket
   socket socket_broker(bbox, socket_type::push);
-  socket socket_clients(bbox, socket_type::pull);
+  socket socket_clients(dbox, socket_type::pull);
   // bind to the socket
-  socket_broker.connect("tcp://localhost:4243");
+  socket_broker.connect(broker_ip);
   string clients_ip("tcp://*:");
   clients_ip = clients_ip + port;
   socket_clients.bind(clients_ip);
@@ -104,6 +103,38 @@ int main(int argc, char *argv[])
       mess << full_ip << "ready";
       socket_broker.send(mess);
       clean_message(mess);
+    }else if (cmd == "download")
+    {
+      string client_ip;
+      mess >> fname;
+      mess >> client_ip;
+      //the long name indicates the formidable use
+      //of the sword in this function (a.k.a. machete)
+      socket socket_amakakeru_ryu_no_hirameki(dbox, socket_type::push);
+      socket_amakakeru_ryu_no_hirameki.connect(client_ip);
+      //new PUSH context
+          //create the object for manage the file
+          //jack the ripper
+          FileSplitter chop(fname);
+          int size = chop.getSize();
+            //calculate the numeber of parts
+          int number_of_parts = chop.getNumberOfParts();
+          string tmp;
+          tmp = number_to_string(number_of_parts);
+          //send the message
+          string ssize = number_to_string(size);
+          clean_message(mess);
+          mess  << ssize << tmp ;
+          socket_amakakeru_ryu_no_hirameki.send(mess);
+          clean_message(mess);
+                //start to send the parts of the file
+          for (int i = 0; i < number_of_parts; ++i)
+          {
+            chop.nextChunkToMesage(mess);
+            socket_amakakeru_ryu_no_hirameki.send(mess);
+            clean_message(mess);
+          }
+      //end of the PUSH context
     }
 
   }
@@ -116,7 +147,6 @@ int main(int argc, char *argv[])
   mess << full_ip << "disconnect";
   socket_broker.send(mess);
   clean_message(mess);
-
 }
 
 void downloadf(socket &s,string filename)

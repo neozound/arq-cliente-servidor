@@ -21,6 +21,8 @@ int main(int argc, char *argv[])
   socket_clients.bind("tcp://*:4242");
   socket_servers.bind("tcp://*:4243");
   
+  cout << "Remember the port to the clients is 4242" << endl;
+  cout << "Remember the port to the servers is 4243" << endl;
   //string with a list of the uploaded filenames
   string files;
 
@@ -74,7 +76,19 @@ int main(int argc, char *argv[])
               }
             }
             if (cmd == "download"){
-              //do something 
+              mc >> filename;
+              string file;
+              file = username + "_uploaded_" + filename;
+              string location_ip = locate_file(file,servers);
+              if("null" == location_ip){
+                //no exists!
+                socket_clients.send("notexists");
+              }else{
+                //file exists
+                clean_message(mc);
+                mc << "ok" << location_ip << file;
+                socket_clients.send(mc);
+              }
             }
             if (cmd == "erase"){
               mc >> filename;
