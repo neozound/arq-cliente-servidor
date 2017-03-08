@@ -222,7 +222,7 @@ void downloadf(socket &socket_broker, string username, string own_ip, string own
             messageToPartialFile(m,fname);
             clean_message(m);
           }
-          response = "File downloaded successfully!"
+          response = "File downloaded successfully!";
     // end of the PULL context
     //whit the end of the class the temp_sockets are destroyed
   }else if( answer == "notexists"){
