@@ -12,25 +12,32 @@ list the files stored in the server
 
 void listf(socket &socket_broker, string username);
 void uploadf(socket &socket_broker, string username);
-void downloadf(socket &socket_broker, string username);
+void downloadf(socket &socket_broker, string username, string own_ip,string own_port);
 void erasef(socket &socket_broker, string username);
 
 int main(int argc, char const *argv[]) {
 
-    if ( not ( 2 == argc ) ) {
-      cerr << "Wrong number of arguments, remember to provide your username" << endl;
+    if ( not ( 4 == argc ) ) {
+      cerr << "Wrong number of arguments, remember to provide your username, ip & port" << endl;
       return 1;
     }
     //take the username
     string username(argv[1]);
+    string own_ip(argv[2]);
+    string own_port(argv[3]);
     cout << "Welcome " <<  username <<endl;
+    string broker_ip;
+    cout << "Please specify the BROKER \"ip:port\"" << endl;
+    cin >> broker_ip;
+    broker_ip = "tcp://" + broker_ip;
+    own_ip = "tcp://" + own_ip + ":" + own_port;
 
     //Created a context (blackbox)
     context brkr;
     //BROKER CONNECTION
     //Created the socket and the conection
     socket socket_broker(brkr, socket_type::request);
-    socket_broker.connect("tcp://localhost:4242");
+    socket_broker.connect(broker_ip);
 
     char option=' ';
     cout << "Available options:" << endl;
@@ -53,7 +60,7 @@ int main(int argc, char const *argv[]) {
             uploadf(socket_broker,username);
             break;
         case 'D':
-            downloadf(socket_broker,username);
+            downloadf(socket_broker,username,own_ip, own_port);
             break;
         case 'E':
             erasef(socket_broker,username);
@@ -73,9 +80,10 @@ int main(int argc, char const *argv[]) {
 
 void listf(socket &socket_broker, string username){
     //ask for list
-    message req;
-    req << "list";
-    socket_broker.send(req);
+    message m;
+    string cmd("list");
+    m << username << cmd;
+    socket_broker.send(m);
     //wait for answer
     message ans;
     string chain;
@@ -124,7 +132,11 @@ void uploadf(socket &socket_broker, string username){
   m >> status;
   if(status != "ok"){
     //something went wrong
-    cout << "The broker answer with bad news"<< endl;
+    if(status == "repeated"){
+      cout << "The file already exists"<< endl;
+    }else{
+      cout << "The broker answer with bad news"<< endl;
+    }
     return;
   }
     m >> servip;
@@ -152,11 +164,15 @@ void uploadf(socket &socket_broker, string username){
     return;  ///--------------------------
 }
 
-void downloadf(socket &socket_broker, string username){
+void downloadf(socket &socket_broker, string username, string own_ip, string own_port){
   //first ask for the file
   //if file exists wait for answer
   //if file doesn't exist then exit
   string filename;
+  string answer;
+  string response;
+  string file;
+  string servip;
 
   //get the name of the file
   cout << "write the filename: ";
@@ -164,14 +180,58 @@ void downloadf(socket &socket_broker, string username){
 
   //the privated client-server comand
   string cmd = "download";
-  string answer;
 
   message m;
-  create_message(cmd, filename, m);
+  m << username << cmd << filename;
   socket_broker.send(m);
-
+  clean_message(m);
   socket_broker.receive(m);
   m >> answer;
+  if(answer == "ok"){
+    m >> servip;
+    m >> file;
+    //push a message to the server
+    context srvr;
+    socket socket_server(srvr, socket_type::push);
+    socket_server.connect(servip);
+    clean_message(m);
+    m << cmd << file << own_ip;
+    socket_server.send(m);
+    //change of context
+    socket_server.disconnect(servip);
+    //the long name indicates the formidable use
+    //of the sword in this function (a.k.a. machete)
+    string new_sword_ip("tcp://*:");
+    new_sword_ip = new_sword_ip + own_port;
+    socket socket_amakakeru_ryu_no_hirameki(srvr, socket_type::pull);
+    socket_amakakeru_ryu_no_hirameki.bind(new_sword_ip);
+    //new PULL context
+          clean_message(m);
+          string size, parts;
+          string fname = username + "_downloaded_" + filename;
+          socket_amakakeru_ryu_no_hirameki.receive(m);
+          m >> size;
+          m >> parts;
+          int nparts = string_to_number(parts);
+          clean_message(m);
+          //start to receive the file
+          remove( fname.c_str() );
+          for (int i = 0; i < nparts; ++i)
+          {
+            socket_amakakeru_ryu_no_hirameki.receive(m);
+            messageToPartialFile(m,fname);
+            clean_message(m);
+          }
+          response = "File downloaded successfully!";
+    // end of the PULL context
+    //whit the end of the class the temp_sockets are destroyed
+  }else if( answer == "notexists"){
+    //do nothing
+    response = "The file doesn't exists";
+  }
+  cout << response << endl;
+
+  //----------------------------
 
   clean_message(m);
 
@@ -208,7 +268,7 @@ void downloadf(socket &socket_broker, string username){
 
 void erasef(socket &socket_broker, string username){
    //ask for the file deletion
-  string filename;
+  string filename,servip;
 
   //get the name of the file
   cout << "write the filename: ";
@@ -217,13 +277,30 @@ void erasef(socket &socket_broker, string username){
   //the privated client-server comand
   string cmd = "erase";
   string answer;
+  string file;
+  string response;
 
   message m;
-  create_message(cmd, filename, m);
+  m << username << cmd << filename;
   socket_broker.send(m);
 
+  cout << "Attempting to delete the file...";
   socket_broker.receive(m);
   m >> answer;
-
-  cout << "Attempting to delete a file from the server..." << answer << endl;
+  if(answer == "ok"){
+    m >> servip;
+    m >> file;
+    //push a message to the server
+    context srvr;
+    socket socket_server(srvr, socket_type::push);
+    socket_server.connect(servip);
+    clean_message(m);
+    m << cmd << file;
+    socket_server.send(m);
+    response = "File deleted successfully";
+  }else if( answer == "notexists"){
+    //do nothing
+    response = "The file doesn't exists";
+  }
+  cout << response << endl;
 }

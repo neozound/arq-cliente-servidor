@@ -11,12 +11,6 @@ send a list of files stored into disk
 remove files with a command
 */
 
-
-void listf(socket &s, const string &files);
-void uploadf(socket &s,string filename, string &files);
-void downloadf(socket &s,string filename);
-void erasef(socket &s, string filename, string &files);
-
 int main(int argc, char *argv[])
 {
   if ( argc < 3 ) {
@@ -36,14 +30,19 @@ int main(int argc, char *argv[])
     cout << "Capacity: " << max_size << " bytes"<< endl;
     cout << "Remember: you can define the max size after the ip address and port" << endl;
   }
+  string broker_ip;
+  cout << "Please specify the BROKER \"ip:port\"" << endl;
+  cin >> broker_ip;
+  broker_ip = "tcp://" + broker_ip;
 
   // initialize the context (blackbox)
   context bbox;
+  context dbox;
   // generate a reply socket
   socket socket_broker(bbox, socket_type::push);
-  socket socket_clients(bbox, socket_type::pull);
+  socket socket_clients(dbox, socket_type::pull);
   // bind to the socket
-  socket_broker.connect("tcp://localhost:4243");
+  socket_broker.connect(broker_ip);
   string clients_ip("tcp://*:");
   clients_ip = clients_ip + port;
   socket_clients.bind(clients_ip);
@@ -92,6 +91,50 @@ int main(int argc, char *argv[])
       mess << full_ip << "ready";
       socket_broker.send(mess);
       clean_message(mess);
+    }else if (cmd == "erase"){
+      mess >> fname;
+      //send to broker: busy
+      mess << full_ip << "busy";
+      socket_broker.send(mess);
+      clean_message(mess);
+      //remove the file
+      remove( fname.c_str() );
+      //send to broker: ready
+      mess << full_ip << "ready";
+      socket_broker.send(mess);
+      clean_message(mess);
+    }else if (cmd == "download")
+    {
+      string client_ip;
+      mess >> fname;
+      mess >> client_ip;
+      //the long name indicates the formidable use
+      //of the sword in this function (a.k.a. machete)
+      socket socket_amakakeru_ryu_no_hirameki(dbox, socket_type::push);
+      socket_amakakeru_ryu_no_hirameki.connect(client_ip);
+      //new PUSH context
+          //create the object for manage the file
+          //jack the ripper
+          FileSplitter chop(fname);
+          int size = chop.getSize();
+            //calculate the numeber of parts
+          int number_of_parts = chop.getNumberOfParts();
+          string tmp;
+          tmp = number_to_string(number_of_parts);
+          //send the message
+          string ssize = number_to_string(size);
+          clean_message(mess);
+          mess  << ssize << tmp ;
+          socket_amakakeru_ryu_no_hirameki.send(mess);
+          clean_message(mess);
+                //start to send the parts of the file
+          for (int i = 0; i < number_of_parts; ++i)
+          {
+            chop.nextChunkToMesage(mess);
+            socket_amakakeru_ryu_no_hirameki.send(mess);
+            clean_message(mess);
+          }
+      //end of the PUSH context
     }
 
   }
@@ -104,49 +147,6 @@ int main(int argc, char *argv[])
   mess << full_ip << "disconnect";
   socket_broker.send(mess);
   clean_message(mess);
-
-}
-
-//the name of the function indiques the request of the client
-
-void listf(socket &s, const string &files)
-{
-  //create a message an put in it the files list
-  message m;
-  m << files;
-  //send to the client the files list
-  s.send(m);
-  //report the action
-  cout << "A client asked for list" << endl;
-}
-
-void uploadf(socket &s,string filename, string &files)
-{
-  //create a message and start a "conversation" with the client
-  message m;
-  s.send("Ready to recieve");
-  
-  s.receive(m);
-    int number_of_parts = 0;
-    string cosas;
-    cosas = m.get(0);
-    number_of_parts = string_to_number(cosas);
-    clean_message(m);
-    s.send("everything is well");
-    //define the prefix
-    filename = "new_" + filename;
-    remove( filename.c_str() );
-    for (int i = 0; i < number_of_parts; ++i)
-    {
-      s.receive(m);
-      s.send("ACK");
-      messageToPartialFile(m,filename);
-      clean_message(m);
-    }
-  
-  //after saved the file add it to the 
-  seek_n_destroy(files,filename);
-  files += "\n" + filename;
 }
 
 void downloadf(socket &s,string filename)
@@ -198,22 +198,3 @@ void downloadf(socket &s,string filename)
   cout << "ok" << endl;
 }
 
-void erasef(socket &s, string filename , string &files)
-{
-  //report what the hell are the client trying to do 
-  cout << "Client erasing "<< filename << "... ";
-  //try to delete a file and send the result to the client
-  if( remove( filename.c_str() ) != 0 ){
-    //report the bad news
-    s.send("Error deleting file" );
-    cout << "Error" << endl;
-  }else{
-    // proclaim the good news
-    s.send("File successfully deleted" );
-    cout << "Ok" << endl;
-    //if ok then delete the file from the list
-    filename = "\n" + filename;
-    seek_n_destroy(files,filename);
-  }
-  return ;
-}
